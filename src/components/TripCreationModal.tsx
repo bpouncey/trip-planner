@@ -83,27 +83,6 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
     onClose()
   }
 
-  const handleRequiredStringChange = (field: 'name' | 'destination' | 'startDate' | 'endDate', value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
-    }
-  }
-
-  const handleOptionalStringChange = (field: 'notes', value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
-    }
-  }
-
-  const handleNumberChange = (field: 'travelers', value: number) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
-    }
-  }
-
   if (!isOpen) return null
 
   return (
@@ -158,7 +137,10 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
               type="text"
               id="destination"
               value={formData.destination}
-              onChange={(e) => handleRequiredStringChange('destination', e.target.value)}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, destination: e.target.value }))
+                if (errors.destination) setErrors(prev => ({ ...prev, destination: undefined }))
+              }}
               className={`input-field ${errors.destination ? 'border-red-500 focus:ring-red-500' : ''}`}
               placeholder="e.g., Tokyo, Japan"
               disabled={isSubmitting}
@@ -178,7 +160,10 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
                 type="date"
                 id="startDate"
                 value={formData.startDate}
-                onChange={(e) => handleRequiredStringChange('startDate', e.target.value)}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, startDate: e.target.value }))
+                  if (errors.startDate) setErrors(prev => ({ ...prev, startDate: undefined }))
+                }}
                 className={`input-field ${errors.startDate ? 'border-red-500 focus:ring-red-500' : ''}`}
                 disabled={isSubmitting}
               />
@@ -195,7 +180,10 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
                 type="date"
                 id="endDate"
                 value={formData.endDate}
-                onChange={(e) => handleRequiredStringChange('endDate', e.target.value)}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, endDate: e.target.value }))
+                  if (errors.endDate) setErrors(prev => ({ ...prev, endDate: undefined }))
+                }}
                 className={`input-field ${errors.endDate ? 'border-red-500 focus:ring-red-500' : ''}`}
                 disabled={isSubmitting}
               />
@@ -216,7 +204,10 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
               min="1"
               max="20"
               value={formData.travelers}
-              onChange={(e) => handleNumberChange('travelers', parseInt(e.target.value) || 1)}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, travelers: parseInt(e.target.value) || 1 }))
+                if (errors.travelers) setErrors(prev => ({ ...prev, travelers: undefined }))
+              }}
               className={`input-field ${errors.travelers ? 'border-red-500 focus:ring-red-500' : ''}`}
               disabled={isSubmitting}
             />
@@ -232,8 +223,11 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
             </label>
             <textarea
               id="notes"
-              value={formData.notes}
-              onChange={(e) => handleOptionalStringChange('notes', e.target.value)}
+              value={formData.notes || ''}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, notes: e.target.value }))
+                if (errors.notes) setErrors(prev => ({ ...prev, notes: undefined }))
+              }}
               className="input-field resize-none h-24"
               placeholder="Any additional notes about this trip..."
               disabled={isSubmitting}
