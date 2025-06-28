@@ -204,9 +204,10 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
               min="1"
               max="20"
               value={formData.travelers}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, travelers: parseInt(e.target.value) || 1 }))
-                if (errors.travelers) setErrors(prev => ({ ...prev, travelers: undefined }))
+              onChange={e => {
+                const value = e.target.value;
+                setFormData(prev => ({ ...prev, travelers: value === '' ? 1 : Number(value) }));
+                if (errors.travelers) setErrors(prev => ({ ...prev, travelers: undefined }));
               }}
               className={`input-field ${errors.travelers ? 'border-red-500 focus:ring-red-500' : ''}`}
               disabled={isSubmitting}
