@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { CreateTripForm } from '../types'
 
 interface TripCreationModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (tripData: CreateTripForm) => void
+  initialData?: CreateTripForm
+  mode?: 'create' | 'edit'
 }
 
-export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationModalProps) {
+export function TripCreationModal({ isOpen, onClose, onSubmit, initialData, mode = 'create' }: TripCreationModalProps) {
   const [formData, setFormData] = useState<CreateTripForm>({
     name: '',
     destination: '',
@@ -19,6 +21,21 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
   
   const [errors, setErrors] = useState<{ [K in keyof CreateTripForm]?: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setFormData(initialData)
+    } else if (isOpen && !initialData) {
+      setFormData({
+        name: '',
+        destination: '',
+        startDate: '',
+        endDate: '',
+        travelers: 1 as number,
+        notes: undefined
+      })
+    }
+  }, [isOpen, initialData])
 
   const validateForm = (): boolean => {
     const newErrors: { [K in keyof CreateTripForm]?: string } = {}
@@ -53,14 +70,18 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Form submitted with data:', formData)
     
     if (!validateForm()) {
+      console.log('Form validation failed')
       return
     }
 
+    console.log('Form validation passed, calling onSubmit')
     setIsSubmitting(true)
     try {
       await onSubmit(formData)
+      console.log('onSubmit completed successfully')
       handleClose()
     } catch (error) {
       console.error('Error creating trip:', error)
@@ -91,7 +112,7 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
         {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">Create New Trip</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{mode === 'edit' ? 'Edit Trip' : 'Create New Trip'}</h2>
             <button
               onClick={handleClose}
               className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -256,10 +277,10 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Creating...
+                  {mode === 'edit' ? 'Saving...' : 'Creating...'}
                 </div>
               ) : (
-                'Create Trip'
+                mode === 'edit' ? 'Save Changes' : 'Create Trip'
               )}
             </button>
           </div>

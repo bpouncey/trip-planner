@@ -2,7 +2,9 @@ import type { Trip, TripSummary, Activity, Flight, Hotel } from '../types';
 
 // Date utilities
 export const formatDate = (date: string | Date): string => {
-  const d = new Date(date);
+  const d = typeof date === 'string'
+    ? new Date(date + 'T00:00:00')
+    : new Date(date);
   return d.toLocaleDateString('en-US', { 
     weekday: 'short', 
     month: 'short', 

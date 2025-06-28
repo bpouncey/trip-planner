@@ -37,16 +37,24 @@ const docToTrip = (doc: QueryDocumentSnapshot<DocumentData>): Trip => {
 
 // Create a new trip
 export const createTrip = async (tripData: CreateTripForm): Promise<Trip> => {
+  console.log('createTrip called with:', tripData)
   try {
-    const tripToSave = {
+    // Sanitize notes: Firestore does not allow undefined
+    const sanitizedTripData = {
       ...tripData,
+      notes: tripData.notes === undefined ? null : tripData.notes,
+    }
+    const tripToSave = {
+      ...sanitizedTripData,
       status: 'planning' as const,
       viewMode: 'timeline' as const,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
 
+    console.log('Saving trip to Firebase:', tripToSave)
     const docRef = await addDoc(collection(db, TRIPS_COLLECTION), tripToSave);
+    console.log('Document created with ID:', docRef.id)
     
     // Return the created trip with the generated ID
     return {
@@ -58,8 +66,8 @@ export const createTrip = async (tripData: CreateTripForm): Promise<Trip> => {
       updatedAt: new Date().toISOString(),
     };
   } catch (error) {
-    console.error('Error creating trip:', error);
-    throw new Error('Failed to create trip');
+    console.error('Error creating trip:', error)
+    throw new Error('Failed to create trip')
   }
 };
 

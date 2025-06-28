@@ -3,7 +3,7 @@ import { TripList } from './components/TripList'
 import { TripView } from './components/TripView'
 import { Header } from './components/Header'
 import { TripCreationModal } from './components/TripCreationModal'
-import { createTrip, getTrips } from './lib/tripService'
+import { createTrip, getTrips, deleteTrip, updateTrip } from './lib/tripService'
 import type { Trip, CreateTripForm } from './types'
 
 function App() {
@@ -39,8 +39,11 @@ function App() {
   }
 
   const handleCreateTrip = async (tripData: CreateTripForm) => {
+    console.log('handleCreateTrip called with:', tripData)
     try {
+      console.log('Calling createTrip service...')
       const newTrip = await createTrip(tripData)
+      console.log('Trip created successfully:', newTrip)
       setTrips(prevTrips => [newTrip, ...prevTrips])
       setSelectedTrip(newTrip)
       setIsCreateModalOpen(false)
@@ -48,6 +51,33 @@ function App() {
       console.error('Error creating trip:', err)
       // You could show an error toast here
       throw err // Re-throw to let the modal handle the error
+    }
+  }
+
+  const handleDeleteTrip = async (tripId: string) => {
+    if (!window.confirm('Are you sure you want to delete this trip? This action cannot be undone.')) return;
+    try {
+      await deleteTrip(tripId);
+      setTrips(prevTrips => prevTrips.filter(t => t.id !== tripId));
+      if (selectedTrip?.id === tripId) {
+        setSelectedTrip(null);
+      }
+    } catch (err) {
+      console.error('Error deleting trip:', err);
+      alert('Failed to delete trip. Please try again.');
+    }
+  }
+
+  const handleUpdateTrip = async (tripId: string, updates: CreateTripForm) => {
+    try {
+      await updateTrip(tripId, updates);
+      setTrips(prevTrips => prevTrips.map(t => t.id === tripId ? { ...t, ...updates } : t));
+      if (selectedTrip?.id === tripId) {
+        setSelectedTrip(prev => prev ? { ...prev, ...updates } : prev);
+      }
+    } catch (err) {
+      console.error('Error updating trip:', err);
+      alert('Failed to update trip. Please try again.');
     }
   }
 
@@ -97,7 +127,7 @@ function App() {
         
         <main className="flex-1 overflow-auto">
           {selectedTrip ? (
-            <TripView trip={selectedTrip} />
+            <TripView trip={selectedTrip} onDeleteTrip={handleDeleteTrip} onUpdateTrip={handleUpdateTrip} />
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">

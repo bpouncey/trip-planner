@@ -2,6 +2,8 @@ import type { Trip } from '../types';
 
 interface TripActionsProps {
   trip: Trip;
+  onDeleteTrip: (tripId: string) => void;
+  onEditTrip: () => void;
 }
 
 // Mock data for actions/tasks
@@ -48,7 +50,7 @@ const mockTasks = [
   },
 ];
 
-export function TripActions({ trip }: TripActionsProps) {
+export function TripActions({ trip, onDeleteTrip, onEditTrip }: TripActionsProps) {
   const completedTasks = mockTasks.filter(task => task.status === 'completed');
   const pendingTasks = mockTasks.filter(task => task.status === 'pending');
   const highPriorityTasks = mockTasks.filter(task => task.priority === 'high' && task.status === 'pending');
@@ -57,13 +59,35 @@ export function TripActions({ trip }: TripActionsProps) {
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-            Trip Actions
-          </h2>
-          <p className="text-gray-600">
-            Manage tasks, reminders, and quick actions for your trip
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-1">
+              Trip Actions
+            </h2>
+            <p className="text-gray-600">
+              Manage tasks, reminders, and quick actions for your trip
+            </p>
+          </div>
+          <div className="flex flex-row gap-2">
+            <button
+              className="btn px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm"
+              onClick={onEditTrip}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 1 1 3.182 3.182L7.5 19.213l-4 1 1-4 13.362-13.362z" />
+              </svg>
+              Edit
+            </button>
+            <button
+              className="btn px-3 py-1.5 rounded-lg border border-red-500 text-red-600 font-medium hover:bg-red-50 transition-colors flex items-center gap-2 text-sm"
+              onClick={() => onDeleteTrip(trip.id)}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+              Delete Trip
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import type { Trip } from '../types';
+import type { Trip, CreateTripForm } from '../types';
 import { TripTimeline } from './TripTimeline';
 import { TripSummary } from './TripSummary';
 import { TripActions } from './TripActions';
+import { TripCreationModal } from './TripCreationModal';
 
 interface TripViewProps {
   trip: Trip;
+  onDeleteTrip: (tripId: string) => void;
+  onUpdateTrip: (tripId: string, updates: CreateTripForm) => Promise<void>;
 }
 
-export function TripView({ trip }: TripViewProps) {
+export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
   const [viewMode, setViewMode] = useState<'timeline' | 'summary' | 'actions'>('timeline');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   return (
     <div className="h-full flex">
@@ -45,7 +49,32 @@ export function TripView({ trip }: TripViewProps) {
         <div className="flex-1 overflow-auto">
           {viewMode === 'timeline' && <TripTimeline trip={trip} />}
           {viewMode === 'summary' && <TripSummary trip={trip} />}
-          {viewMode === 'actions' && <TripActions trip={trip} />}
+          {viewMode === 'actions' && (
+            <>
+              <TripActions
+                trip={trip}
+                onDeleteTrip={onDeleteTrip}
+                onEditTrip={() => setIsEditModalOpen(true)}
+              />
+              <TripCreationModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                onSubmit={async (updates) => {
+                  await onUpdateTrip(trip.id, updates);
+                  setIsEditModalOpen(false);
+                }}
+                initialData={{
+                  name: trip.name,
+                  destination: trip.destination,
+                  startDate: trip.startDate,
+                  endDate: trip.endDate,
+                  travelers: trip.travelers,
+                  notes: trip.notes,
+                }}
+                mode="edit"
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
