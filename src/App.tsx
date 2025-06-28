@@ -2,11 +2,31 @@ import { useState } from 'react'
 import { TripList } from './components/TripList'
 import { TripView } from './components/TripView'
 import { Header } from './components/Header'
-import type { Trip } from './types'
+import { TripCreationModal } from './components/TripCreationModal'
+import type { Trip, CreateTripForm } from './types'
 
 function App() {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
+  const handleCreateTrip = async (tripData: CreateTripForm) => {
+    // TODO: Add Firebase integration here
+    console.log('Creating trip:', tripData)
+    
+    // For now, create a mock trip
+    const newTrip: Trip = {
+      id: Date.now().toString(),
+      ...tripData,
+      status: 'planning',
+      viewMode: 'timeline',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    
+    // TODO: Save to Firebase and update state
+    console.log('Created trip:', newTrip)
+  }
 
   return (
     <div className="h-screen bg-gray-50 flex">
@@ -45,7 +65,7 @@ function App() {
       <div className="flex-1 flex flex-col">
         <Header 
           selectedTrip={selectedTrip}
-          onNewTrip={() => {/* TODO: Implement new trip modal */}}
+          onNewTrip={() => setIsCreateModalOpen(true)}
         />
         
         <main className="flex-1 overflow-auto">
@@ -61,7 +81,10 @@ function App() {
                 <p className="text-gray-600 mb-6">
                   Select a trip from the sidebar or create a new one to get started
                 </p>
-                <button className="btn-primary">
+                <button 
+                  className="btn-primary"
+                  onClick={() => setIsCreateModalOpen(true)}
+                >
                   Create New Trip
                 </button>
               </div>
@@ -69,6 +92,13 @@ function App() {
           )}
         </main>
       </div>
+
+      {/* Trip Creation Modal */}
+      <TripCreationModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateTrip}
+      />
     </div>
   )
 }
