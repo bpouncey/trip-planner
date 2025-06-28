@@ -2,6 +2,7 @@ import {
   collection, 
   addDoc, 
   getDocs, 
+  getDoc,
   updateDoc, 
   deleteDoc, 
   doc, 
@@ -104,10 +105,12 @@ export const deleteTrip = async (tripId: string): Promise<void> => {
 export const getTrip = async (tripId: string): Promise<Trip | null> => {
   try {
     const tripRef = doc(db, TRIPS_COLLECTION, tripId);
-    const tripDoc = await getDocs(query(collection(db, TRIPS_COLLECTION)));
+    const tripDoc = await getDoc(tripRef);
     
-    const trip = tripDoc.docs.find(doc => doc.id === tripId);
-    return trip ? docToTrip(trip) : null;
+    if (tripDoc.exists()) {
+      return docToTrip(tripDoc as QueryDocumentSnapshot<DocumentData>);
+    }
+    return null;
   } catch (error) {
     console.error('Error fetching trip:', error);
     throw new Error('Failed to fetch trip');
