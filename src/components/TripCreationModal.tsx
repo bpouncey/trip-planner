@@ -13,8 +13,8 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
     destination: '',
     startDate: '',
     endDate: '',
-    travelers: 1,
-    notes: ''
+    travelers: 1 as number,
+    notes: undefined
   })
   
   const [errors, setErrors] = useState<Partial<CreateTripForm>>({})
@@ -76,7 +76,7 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
       startDate: '',
       endDate: '',
       travelers: 1,
-      notes: ''
+      notes: undefined
     })
     setErrors({})
     setIsSubmitting(false)
