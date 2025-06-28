@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import type { Trip, CreateTripForm } from '../types';
+import { useState, useEffect } from 'react';
+import type { Trip, CreateTripForm, CreateActivityForm, Activity } from '../types';
 import { TripTimeline } from './TripTimeline';
 import { TripSummary } from './TripSummary';
 import { TripActions } from './TripActions';
 import { TripCreationModal } from './TripCreationModal';
+import { ActivityModal } from './ActivityModal';
+import { getActivities, createActivity, updateActivity, deleteActivity } from '../lib/tripService';
 
 interface TripViewProps {
   trip: Trip;
@@ -14,6 +16,95 @@ interface TripViewProps {
 export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
   const [viewMode, setViewMode] = useState<'timeline' | 'summary' | 'actions'>('timeline');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Activities state and CRUD logic
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadActivities = async () => {
+      try {
+        setLoading(true);
+        const tripActivities = await getActivities(trip.id);
+        setActivities(tripActivities);
+        setError(null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load activities';
+        setError(errorMessage);
+        setActivities([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadActivities();
+  }, [trip.id]);
+
+  const handleCreateActivity = async (activityData: CreateActivityForm) => {
+    try {
+      const newActivity = await createActivity(trip.id, activityData);
+      setActivities(prev => [...prev, newActivity]);
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleUpdateActivity = async (activityId: string, activityData: CreateActivityForm) => {
+    try {
+      await updateActivity(trip.id, activityId, activityData);
+      setActivities(prev => prev.map(activity =>
+        activity.id === activityId ? { ...activity, ...activityData } : activity
+      ));
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleDeleteActivity = async (activityId: string) => {
+    try {
+      await deleteActivity(trip.id, activityId);
+      setActivities(prev => prev.filter(activity => activity.id !== activityId));
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  // Activity modal state
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [activityInitialData, setActivityInitialData] = useState<CreateActivityForm | undefined>(undefined);
+  const [activityMode, setActivityMode] = useState<'create' | 'edit'>('create');
+
+  // Handler to open the activity modal (optionally with a date)
+  const handleAddActivity = (date?: string) => {
+    setActivityInitialData({
+      title: '',
+      bookingUrl: '',
+      description: '',
+      category: 'explore',
+      costPerPerson: 0,
+      groupSize: undefined,
+      date: date || '',
+      time: '',
+      duration: undefined,
+      location: '',
+      notes: ''
+    });
+    setActivityMode('create');
+    setIsActivityModalOpen(true);
+  };
+
+  // Handler to close the activity modal
+  const handleCloseActivityModal = () => {
+    setIsActivityModalOpen(false);
+    setActivityInitialData(undefined);
+    setActivityMode('create');
+  };
+
+  // Handler for ActivityModal submit
+  const handleActivityModalSubmit = async (activityData: CreateActivityForm) => {
+    await handleCreateActivity(activityData);
+    handleCloseActivityModal();
+  };
 
   return (
     <div className="h-full flex">
@@ -47,7 +138,17 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto">
-          {viewMode === 'timeline' && <TripTimeline trip={trip} />}
+          {viewMode === 'timeline' && (
+            <TripTimeline
+              trip={trip}
+              activities={activities}
+              loading={loading}
+              error={error}
+              onAddActivity={handleAddActivity}
+              onUpdateActivity={handleUpdateActivity}
+              onDeleteActivity={handleDeleteActivity}
+            />
+          )}
           {viewMode === 'summary' && <TripSummary trip={trip} />}
           {viewMode === 'actions' && (
             <>
@@ -55,6 +156,7 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
                 trip={trip}
                 onDeleteTrip={onDeleteTrip}
                 onEditTrip={() => setIsEditModalOpen(true)}
+                onAddActivity={handleAddActivity}
               />
               <TripCreationModal
                 isOpen={isEditModalOpen}
@@ -77,6 +179,16 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
           )}
         </div>
       </div>
+      {/* Activity Modal (global for this trip) */}
+      <ActivityModal
+        isOpen={isActivityModalOpen}
+        onClose={handleCloseActivityModal}
+        onSubmit={handleActivityModalSubmit}
+        initialData={activityInitialData}
+        mode={activityMode}
+        tripStartDate={trip.startDate}
+        tripEndDate={trip.endDate}
+      />
     </div>
   );
 } 

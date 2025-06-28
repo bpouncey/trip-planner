@@ -4,6 +4,7 @@ interface TripActionsProps {
   trip: Trip;
   onDeleteTrip: (tripId: string) => void;
   onEditTrip: () => void;
+  onAddActivity: () => void;
 }
 
 // Mock data for actions/tasks
@@ -50,7 +51,7 @@ const mockTasks = [
   },
 ];
 
-export function TripActions({ trip, onDeleteTrip, onEditTrip }: TripActionsProps) {
+export function TripActions({ trip, onDeleteTrip, onEditTrip, onAddActivity }: TripActionsProps) {
   const completedTasks = mockTasks.filter(task => task.status === 'completed');
   const pendingTasks = mockTasks.filter(task => task.status === 'pending');
   const highPriorityTasks = mockTasks.filter(task => task.priority === 'high' && task.status === 'pending');
@@ -96,32 +97,42 @@ export function TripActions({ trip, onDeleteTrip, onEditTrip }: TripActionsProps
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
             
             <div className="space-y-3">
-              <button className="w-full btn-primary">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add Activity
+              <button className="w-full btn-primary flex items-center justify-center gap-2" onClick={onAddActivity}>
+                <span className="text-xl">+</span>
+                <span>Add Activity</span>
               </button>
               
-              <button className="w-full btn-secondary">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Add Flight
+                <span>Add Flight</span>
               </button>
               
-              <button className="w-full btn-secondary">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                Add Hotel
+                <span>Add Hotel</span>
               </button>
               
-              <button className="w-full btn-secondary">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                Add Task
+                <span>Add Task</span>
+              </button>
+              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zm6 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Share Trip</span>
+              </button>
+              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export PDF</span>
               </button>
             </div>
           </div>
