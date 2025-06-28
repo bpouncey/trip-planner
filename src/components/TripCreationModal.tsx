@@ -15,13 +15,13 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
     endDate: '',
     travelers: 1 as number,
     notes: undefined
-  })
+  } as CreateTripForm)
   
-  const [errors, setErrors] = useState<Partial<CreateTripForm>>({})
+  const [errors, setErrors] = useState<{ [K in keyof CreateTripForm]?: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<CreateTripForm> = {}
+    const newErrors: { [K in keyof CreateTripForm]?: string } = {}
 
     if (!formData.name.trim()) {
       newErrors.name = 'Trip name is required'
@@ -75,7 +75,7 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
       destination: '',
       startDate: '',
       endDate: '',
-      travelers: 1,
+      travelers: 1 as number,
       notes: undefined
     })
     setErrors({})
