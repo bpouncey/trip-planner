@@ -58,6 +58,7 @@ function App() {
           selectedTrip={selectedTrip}
           onSelectTrip={setSelectedTrip}
           sidebarOpen={sidebarOpen}
+          onNewTrip={() => setIsCreateModalOpen(true)}
         />
       </div>
 

@@ -6,6 +6,7 @@ interface TripListProps {
   selectedTrip: Trip | null;
   onSelectTrip: (trip: Trip) => void;
   sidebarOpen: boolean;
+  onNewTrip: () => void;
 }
 
 // Mock data for now - will be replaced with Firebase data
@@ -48,7 +49,7 @@ const mockTrips: Trip[] = [
   },
 ];
 
-export function TripList({ selectedTrip, onSelectTrip, sidebarOpen }: TripListProps) {
+export function TripList({ selectedTrip, onSelectTrip, sidebarOpen, onNewTrip }: TripListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'planning' | 'booked' | 'archived'>('all');
 
@@ -63,7 +64,7 @@ export function TripList({ selectedTrip, onSelectTrip, sidebarOpen }: TripListPr
     return (
       <div className="flex-1 flex flex-col items-center py-4 space-y-4">
         <button
-          onClick={() => {/* TODO: Open new trip modal */}}
+          onClick={onNewTrip}
           className="p-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +127,7 @@ export function TripList({ selectedTrip, onSelectTrip, sidebarOpen }: TripListPr
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
           <button
-            onClick={() => {/* TODO: Open new trip modal */}}
+            onClick={onNewTrip}
             className="w-full mb-4 p-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
           >
             <div className="flex items-center justify-center space-x-2">
