@@ -83,15 +83,22 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
     onClose()
   }
 
-  const handleInputChange = (field: keyof CreateTripForm, value: string | number) => {
-    if (field === 'travelers') {
-      setFormData(prev => ({ ...prev, travelers: value as number }))
-    } else if (field === 'notes') {
-      setFormData(prev => ({ ...prev, notes: value as string }))
-    } else {
-      setFormData(prev => ({ ...prev, [field]: value as string }))
+  const handleRequiredStringChange = (field: 'name' | 'destination' | 'startDate' | 'endDate', value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }))
     }
-    // Clear error when user starts typing
+  }
+
+  const handleOptionalStringChange = (field: 'notes', value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  const handleNumberChange = (field: 'travelers', value: number) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }))
     }
@@ -129,7 +136,10 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
               type="text"
               id="name"
               value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, name: e.target.value }))
+                if (errors.name) setErrors(prev => ({ ...prev, name: undefined }))
+              }}
               className={`input-field ${errors.name ? 'border-red-500 focus:ring-red-500' : ''}`}
               placeholder="e.g., Summer Vacation 2024"
               disabled={isSubmitting}
@@ -148,7 +158,7 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
               type="text"
               id="destination"
               value={formData.destination}
-              onChange={(e) => handleInputChange('destination', e.target.value)}
+              onChange={(e) => handleRequiredStringChange('destination', e.target.value)}
               className={`input-field ${errors.destination ? 'border-red-500 focus:ring-red-500' : ''}`}
               placeholder="e.g., Tokyo, Japan"
               disabled={isSubmitting}
@@ -168,7 +178,7 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
                 type="date"
                 id="startDate"
                 value={formData.startDate}
-                onChange={(e) => handleInputChange('startDate', e.target.value)}
+                onChange={(e) => handleRequiredStringChange('startDate', e.target.value)}
                 className={`input-field ${errors.startDate ? 'border-red-500 focus:ring-red-500' : ''}`}
                 disabled={isSubmitting}
               />
@@ -185,7 +195,7 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
                 type="date"
                 id="endDate"
                 value={formData.endDate}
-                onChange={(e) => handleInputChange('endDate', e.target.value)}
+                onChange={(e) => handleRequiredStringChange('endDate', e.target.value)}
                 className={`input-field ${errors.endDate ? 'border-red-500 focus:ring-red-500' : ''}`}
                 disabled={isSubmitting}
               />
@@ -206,7 +216,7 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
               min="1"
               max="20"
               value={formData.travelers}
-              onChange={(e) => handleInputChange('travelers', parseInt(e.target.value) || 1)}
+              onChange={(e) => handleNumberChange('travelers', parseInt(e.target.value) || 1)}
               className={`input-field ${errors.travelers ? 'border-red-500 focus:ring-red-500' : ''}`}
               disabled={isSubmitting}
             />
@@ -223,7 +233,7 @@ export function TripCreationModal({ isOpen, onClose, onSubmit }: TripCreationMod
             <textarea
               id="notes"
               value={formData.notes}
-              onChange={(e) => handleInputChange('notes', e.target.value)}
+              onChange={(e) => handleOptionalStringChange('notes', e.target.value)}
               className="input-field resize-none h-24"
               placeholder="Any additional notes about this trip..."
               disabled={isSubmitting}
