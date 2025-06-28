@@ -3,57 +3,28 @@ import type { Trip } from '../types';
 import { formatDate, getDaysBetween } from '../lib/utils';
 
 interface TripListProps {
+  trips: Trip[];
   selectedTrip: Trip | null;
   onSelectTrip: (trip: Trip) => void;
   sidebarOpen: boolean;
   onNewTrip: () => void;
+  isLoading: boolean;
+  error: string | null;
 }
 
-// Mock data for now - will be replaced with Firebase data
-const mockTrips: Trip[] = [
-  {
-    id: '1',
-    name: 'Japan Adventure',
-    destination: 'Tokyo, Japan',
-    startDate: '2024-04-15',
-    endDate: '2024-04-25',
-    travelers: 2,
-    status: 'planning',
-    viewMode: 'timeline',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    name: 'Paris Getaway',
-    destination: 'Paris, France',
-    startDate: '2024-06-10',
-    endDate: '2024-06-17',
-    travelers: 2,
-    status: 'booked',
-    viewMode: 'timeline',
-    createdAt: '2024-01-10T10:00:00Z',
-    updatedAt: '2024-01-12T10:00:00Z',
-  },
-  {
-    id: '3',
-    name: 'Weekend in NYC',
-    destination: 'New York, NY',
-    startDate: '2024-03-08',
-    endDate: '2024-03-10',
-    travelers: 2,
-    status: 'archived',
-    viewMode: 'timeline',
-    createdAt: '2024-01-05T10:00:00Z',
-    updatedAt: '2024-01-05T10:00:00Z',
-  },
-];
-
-export function TripList({ selectedTrip, onSelectTrip, sidebarOpen, onNewTrip }: TripListProps) {
+export function TripList({ 
+  trips, 
+  selectedTrip, 
+  onSelectTrip, 
+  sidebarOpen, 
+  onNewTrip, 
+  isLoading, 
+  error 
+}: TripListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'planning' | 'booked' | 'archived'>('all');
 
-  const filteredTrips = mockTrips.filter(trip => {
+  const filteredTrips = trips.filter(trip => {
     const matchesSearch = trip.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          trip.destination.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || trip.status === statusFilter;
@@ -71,20 +42,31 @@ export function TripList({ selectedTrip, onSelectTrip, sidebarOpen, onNewTrip }:
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
         </button>
-        {filteredTrips.map(trip => (
-          <button
-            key={trip.id}
-            onClick={() => onSelectTrip(trip)}
-            className={`p-3 rounded-lg transition-colors ${
-              selectedTrip?.id === trip.id
-                ? 'bg-blue-100 text-blue-600'
-                : 'hover:bg-gray-100 text-gray-600'
-            }`}
-            title={trip.name}
-          >
-            <div className="text-2xl">✈️</div>
-          </button>
-        ))}
+        
+        {isLoading ? (
+          <div className="flex items-center justify-center p-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center p-4">
+            <div className="text-red-500 text-sm">⚠️</div>
+          </div>
+        ) : (
+          filteredTrips.map(trip => (
+            <button
+              key={trip.id}
+              onClick={() => onSelectTrip(trip)}
+              className={`p-3 rounded-lg transition-colors ${
+                selectedTrip?.id === trip.id
+                  ? 'bg-blue-100 text-blue-600'
+                  : 'hover:bg-gray-100 text-gray-600'
+              }`}
+              title={trip.name}
+            >
+              <div className="text-2xl">✈️</div>
+            </button>
+          ))
+        )}
       </div>
     );
   }
@@ -138,47 +120,66 @@ export function TripList({ selectedTrip, onSelectTrip, sidebarOpen, onNewTrip }:
             </div>
           </button>
 
-          <div className="space-y-2">
-            {filteredTrips.map(trip => {
-              const duration = getDaysBetween(trip.startDate, trip.endDate);
-              return (
-                <button
-                  key={trip.id}
-                  onClick={() => onSelectTrip(trip)}
-                  className={`w-full p-3 rounded-lg text-left transition-colors ${
-                    selectedTrip?.id === trip.id
-                      ? 'bg-blue-50 border border-blue-200'
-                      : 'hover:bg-gray-50 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-1">
-                    <h3 className="font-medium text-gray-900 truncate">{trip.name}</h3>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      trip.status === 'planning' 
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : trip.status === 'booked'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-1">{trip.destination}</p>
-                  <p className="text-xs text-gray-500">
-                    {formatDate(trip.startDate)} - {formatDate(trip.endDate)} • {duration} days
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          {filteredTrips.length === 0 && (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-2">✈️</div>
-              <p className="text-gray-500 text-sm">
-                {searchTerm || statusFilter !== 'all' ? 'No trips found' : 'No trips yet'}
-              </p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-2">⚠️</div>
+              <p className="text-red-500 text-sm mb-2">Failed to load trips</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="text-blue-600 text-sm hover:underline"
+              >
+                Try again
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {filteredTrips.map(trip => {
+                  const duration = getDaysBetween(trip.startDate, trip.endDate);
+                  return (
+                    <button
+                      key={trip.id}
+                      onClick={() => onSelectTrip(trip)}
+                      className={`w-full p-3 rounded-lg text-left transition-colors ${
+                        selectedTrip?.id === trip.id
+                          ? 'bg-blue-50 border border-blue-200'
+                          : 'hover:bg-gray-50 border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-1">
+                        <h3 className="font-medium text-gray-900 truncate">{trip.name}</h3>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          trip.status === 'planning' 
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : trip.status === 'booked'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {trip.status.charAt(0).toUpperCase() + trip.status.slice(1)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">{trip.destination}</p>
+                      <p className="text-xs text-gray-500">
+                        {formatDate(trip.startDate)} - {formatDate(trip.endDate)} • {duration} days
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {filteredTrips.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-2">✈️</div>
+                  <p className="text-gray-500 text-sm">
+                    {searchTerm || statusFilter !== 'all' ? 'No trips found' : 'No trips yet'}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

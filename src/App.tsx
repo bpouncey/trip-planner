@@ -1,31 +1,54 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { TripList } from './components/TripList'
 import { TripView } from './components/TripView'
 import { Header } from './components/Header'
 import { TripCreationModal } from './components/TripCreationModal'
+import { createTrip, getTrips } from './lib/tripService'
 import type { Trip, CreateTripForm } from './types'
 
 function App() {
+  const [trips, setTrips] = useState<Trip[]>([])
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load trips from Firebase on component mount
+  useEffect(() => {
+    loadTrips()
+  }, [])
+
+  const loadTrips = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const fetchedTrips = await getTrips()
+      setTrips(fetchedTrips)
+      
+      // If no trip is selected and we have trips, select the first one
+      if (!selectedTrip && fetchedTrips.length > 0) {
+        setSelectedTrip(fetchedTrips[0])
+      }
+    } catch (err) {
+      console.error('Error loading trips:', err)
+      setError('Failed to load trips. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleCreateTrip = async (tripData: CreateTripForm) => {
-    // TODO: Add Firebase integration here
-    console.log('Creating trip:', tripData)
-    
-    // For now, create a mock trip
-    const newTrip: Trip = {
-      id: Date.now().toString(),
-      ...tripData,
-      status: 'planning',
-      viewMode: 'timeline',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    try {
+      const newTrip = await createTrip(tripData)
+      setTrips(prevTrips => [newTrip, ...prevTrips])
+      setSelectedTrip(newTrip)
+      setIsCreateModalOpen(false)
+    } catch (err) {
+      console.error('Error creating trip:', err)
+      // You could show an error toast here
+      throw err // Re-throw to let the modal handle the error
     }
-    
-    // TODO: Save to Firebase and update state
-    console.log('Created trip:', newTrip)
   }
 
   return (
@@ -55,10 +78,13 @@ function App() {
         </div>
         
         <TripList 
+          trips={trips}
           selectedTrip={selectedTrip}
           onSelectTrip={setSelectedTrip}
           sidebarOpen={sidebarOpen}
           onNewTrip={() => setIsCreateModalOpen(true)}
+          isLoading={isLoading}
+          error={error}
         />
       </div>
 
@@ -80,14 +106,21 @@ function App() {
                   Welcome to Trip Planner
                 </h2>
                 <p className="text-gray-600 mb-6">
-                  Select a trip from the sidebar or create a new one to get started
+                  {isLoading 
+                    ? 'Loading your trips...' 
+                    : trips.length === 0 
+                      ? 'Create your first trip to get started'
+                      : 'Select a trip from the sidebar to view details'
+                  }
                 </p>
-                <button 
-                  className="btn-primary"
-                  onClick={() => setIsCreateModalOpen(true)}
-                >
-                  Create New Trip
-                </button>
+                {!isLoading && trips.length === 0 && (
+                  <button 
+                    className="btn-primary"
+                    onClick={() => setIsCreateModalOpen(true)}
+                  >
+                    Create New Trip
+                  </button>
+                )}
               </div>
             </div>
           )}
