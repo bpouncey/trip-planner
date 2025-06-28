@@ -1,7 +1,7 @@
-const defaultPreset = require('tailwindcss/preset')
+import defaultPreset from 'tailwindcss/preset'
 
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   presets: [defaultPreset],
   content: [
     "./index.html",
