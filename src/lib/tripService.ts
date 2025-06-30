@@ -13,7 +13,7 @@ import {
   type QueryDocumentSnapshot
 } from 'firebase/firestore';
 import { db } from './firebase';
-import type { Trip, CreateTripForm, Activity, CreateActivityForm } from '../types';
+import type { Trip, CreateTripForm, Activity, CreateActivityForm, Flight, CreateFlightForm, Hotel, CreateHotelForm } from '../types';
 
 const TRIPS_COLLECTION = 'trips';
 
@@ -234,5 +234,223 @@ export const deleteActivity = async (tripId: string, activityId: string): Promis
   } catch (error) {
     console.error('Error deleting activity:', error);
     throw new Error('Failed to delete activity');
+  }
+};
+
+// --- Flight CRUD ---
+
+// Convert Firestore document to Flight object
+const docToFlight = (doc: QueryDocumentSnapshot<DocumentData>): Flight => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    tripId: data.tripId,
+    airline: data.airline,
+    flightNumber: data.flightNumber,
+    cabinClass: data.cabinClass,
+    departure: {
+      airport: data.departureAirport,
+      city: data.departureCity,
+      dateTime: data.departureDateTime,
+    },
+    arrival: {
+      airport: data.arrivalAirport,
+      city: data.arrivalCity,
+      dateTime: data.arrivalDateTime,
+    },
+    layovers: data.layovers,
+    seatNumbers: data.seatNumbers,
+    planeType: data.planeType,
+    segments: data.segments,
+    pricePerPerson: {
+      cash: data.pricePerPerson?.cash ?? 0,
+      points: data.pricePerPerson?.points ?? 0,
+      taxes: data.pricePerPerson?.taxes ?? 0,
+    },
+    paymentMethod: data.paymentMethod,
+    status: data.status || 'planned',
+    confirmationNumber: data.confirmationNumber,
+    createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || new Date().toISOString(),
+    updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || new Date().toISOString(),
+  };
+};
+
+// Create a new flight for a trip
+export const createFlight = async (tripId: string, flightData: CreateFlightForm): Promise<Flight> => {
+  try {
+    const sanitizedData = removeUndefinedFields({
+      ...flightData,
+      confirmationNumber: flightData.confirmationNumber === '' ? null : flightData.confirmationNumber,
+      status: 'planned' as const,
+      tripId,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      segments: flightData.segments,
+    });
+    
+    const flightsCol = collection(db, TRIPS_COLLECTION, tripId, 'flights');
+    const docRef = await addDoc(flightsCol, sanitizedData);
+    
+    return {
+      id: docRef.id,
+      tripId,
+      airline: flightData.airline,
+      flightNumber: flightData.flightNumber,
+      cabinClass: flightData.cabinClass,
+      departure: {
+        airport: flightData.departureAirport,
+        city: flightData.departureCity,
+        dateTime: flightData.departureDateTime,
+      },
+      arrival: {
+        airport: flightData.arrivalAirport,
+        city: flightData.arrivalCity,
+        dateTime: flightData.arrivalDateTime,
+      },
+      pricePerPerson: flightData.pricePerPerson,
+      paymentMethod: flightData.paymentMethod,
+      status: 'planned',
+      confirmationNumber: flightData.confirmationNumber || undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      segments: flightData.segments,
+    };
+  } catch (error) {
+    console.error('Error creating flight:', error);
+    throw new Error('Failed to create flight');
+  }
+};
+
+// Get all flights for a trip, sorted by departure time
+export const getFlights = async (tripId: string): Promise<Flight[]> => {
+  try {
+    const flightsCol = collection(db, TRIPS_COLLECTION, tripId, 'flights');
+    const q = query(flightsCol, orderBy('departureDateTime', 'asc'));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(docToFlight);
+  } catch (error) {
+    console.error('Error fetching flights:', error);
+    throw new Error('Failed to fetch flights');
+  }
+};
+
+// Update a flight
+export const updateFlight = async (tripId: string, flightId: string, updates: Partial<Flight>): Promise<void> => {
+  try {
+    const flightRef = doc(db, TRIPS_COLLECTION, tripId, 'flights', flightId);
+    await updateDoc(flightRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error updating flight:', error);
+    throw new Error('Failed to update flight');
+  }
+};
+
+// Delete a flight
+export const deleteFlight = async (tripId: string, flightId: string): Promise<void> => {
+  try {
+    const flightRef = doc(db, TRIPS_COLLECTION, tripId, 'flights', flightId);
+    await deleteDoc(flightRef);
+  } catch (error) {
+    console.error('Error deleting flight:', error);
+    throw new Error('Failed to delete flight');
+  }
+};
+
+// --- Hotel CRUD ---
+
+// Convert Firestore document to Hotel object
+const docToHotel = (doc: QueryDocumentSnapshot<DocumentData>): Hotel => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    tripId: data.tripId,
+    name: data.name,
+    address: data.address,
+    bookingSite: data.bookingSite,
+    checkInDate: data.checkInDate,
+    checkOutDate: data.checkOutDate,
+    roomType: data.roomType,
+    pricePerNight: data.pricePerNight,
+    pointsPerNight: data.pointsPerNight,
+    totalCost: {
+      cash: data.totalCost?.cash ?? 0,
+      points: data.totalCost?.points ?? 0,
+    },
+    paymentMethod: data.paymentMethod,
+    taxes: data.taxes,
+    status: data.status || 'planned',
+    confirmationNumber: data.confirmationNumber,
+    notes: data.notes,
+    createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || new Date().toISOString(),
+    updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || new Date().toISOString(),
+  };
+};
+
+// Create a new hotel for a trip
+export const createHotel = async (tripId: string, hotelData: CreateHotelForm): Promise<Hotel> => {
+  try {
+    const sanitizedData = removeUndefinedFields({
+      ...hotelData,
+      status: 'planned' as const,
+      tripId,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    const hotelsCol = collection(db, TRIPS_COLLECTION, tripId, 'hotels');
+    const docRef = await addDoc(hotelsCol, sanitizedData);
+    return {
+      id: docRef.id,
+      ...hotelData,
+      tripId,
+      status: 'planned',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      totalCost: typeof hotelData.totalCost === 'number' ? { cash: hotelData.totalCost, points: 0 } : hotelData.totalCost,
+    } as Hotel;
+  } catch (error) {
+    console.error('Error creating hotel:', error);
+    throw new Error('Failed to create hotel');
+  }
+};
+
+// Get all hotels for a trip, sorted by check-in date
+export const getHotels = async (tripId: string): Promise<Hotel[]> => {
+  try {
+    const hotelsCol = collection(db, TRIPS_COLLECTION, tripId, 'hotels');
+    const q = query(hotelsCol, orderBy('checkInDate', 'asc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(docToHotel);
+  } catch (error) {
+    console.error('Error fetching hotels:', error);
+    throw new Error('Failed to fetch hotels');
+  }
+};
+
+// Update a hotel
+export const updateHotel = async (tripId: string, hotelId: string, updates: Partial<Hotel>): Promise<void> => {
+  try {
+    const hotelRef = doc(db, TRIPS_COLLECTION, tripId, 'hotels', hotelId);
+    await updateDoc(hotelRef, removeUndefinedFields({
+      ...updates,
+      updatedAt: serverTimestamp(),
+    }));
+  } catch (error) {
+    console.error('Error updating hotel:', error);
+    throw new Error('Failed to update hotel');
+  }
+};
+
+// Delete a hotel
+export const deleteHotel = async (tripId: string, hotelId: string): Promise<void> => {
+  try {
+    const hotelRef = doc(db, TRIPS_COLLECTION, tripId, 'hotels', hotelId);
+    await deleteDoc(hotelRef);
+  } catch (error) {
+    console.error('Error deleting hotel:', error);
+    throw new Error('Failed to delete hotel');
   }
 }; 

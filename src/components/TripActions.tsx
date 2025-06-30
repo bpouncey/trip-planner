@@ -1,10 +1,16 @@
 import type { Trip } from '../types';
+import FlightModal from './FlightModal';
+import { useState } from 'react';
+import { createFlight } from '../lib/tripService';
+import type { CreateFlightForm } from '../types';
 
 interface TripActionsProps {
   trip: Trip;
   onDeleteTrip: (tripId: string) => void;
   onEditTrip: () => void;
   onAddActivity: () => void;
+  onAddFlight?: (flightData: CreateFlightForm) => Promise<void>;
+  onAddHotel?: () => void;
 }
 
 // Mock data for actions/tasks
@@ -51,10 +57,34 @@ const mockTasks = [
   },
 ];
 
-export function TripActions({ trip, onDeleteTrip, onEditTrip, onAddActivity }: TripActionsProps) {
+export function TripActions({ trip, onDeleteTrip, onEditTrip, onAddActivity, onAddFlight, onAddHotel }: TripActionsProps) {
+  const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
+  const [isAddingFlight, setIsAddingFlight] = useState(false);
+
   const completedTasks = mockTasks.filter(task => task.status === 'completed');
   const pendingTasks = mockTasks.filter(task => task.status === 'pending');
   const highPriorityTasks = mockTasks.filter(task => task.priority === 'high' && task.status === 'pending');
+
+  const handleAddFlight = () => {
+    setIsFlightModalOpen(true);
+  };
+
+  const handleFlightSubmit = async (flightData: CreateFlightForm) => {
+    setIsAddingFlight(true);
+    try {
+      await createFlight(trip.id, flightData);
+      setIsFlightModalOpen(false);
+      // Notify parent component if callback provided
+      if (onAddFlight) {
+        await onAddFlight(flightData);
+      }
+    } catch (error) {
+      console.error('Error adding flight:', error);
+      // You could add a toast notification here
+    } finally {
+      setIsAddingFlight(false);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -102,14 +132,21 @@ export function TripActions({ trip, onDeleteTrip, onEditTrip, onAddActivity }: T
                 <span>Add Activity</span>
               </button>
               
-              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
+              <button 
+                className="w-full btn-secondary flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors" 
+                onClick={handleAddFlight}
+                disabled={isAddingFlight}
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Add Flight</span>
+                <span>{isAddingFlight ? 'Adding...' : 'Add Flight'}</span>
               </button>
               
-              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
+              <button 
+                className="w-full btn-secondary flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors" 
+                onClick={onAddHotel}
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
@@ -121,18 +158,6 @@ export function TripActions({ trip, onDeleteTrip, onEditTrip, onAddActivity }: T
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 <span>Add Task</span>
-              </button>
-              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8a3 3 0 11-6 0 3 3 0 016 0zm6 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Share Trip</span>
-              </button>
-              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>Export PDF</span>
               </button>
             </div>
           </div>
@@ -285,6 +310,14 @@ export function TripActions({ trip, onDeleteTrip, onEditTrip, onAddActivity }: T
           </div>
         </div>
       </div>
+
+      {/* Flight Modal */}
+      <FlightModal
+        isOpen={isFlightModalOpen}
+        onClose={() => setIsFlightModalOpen(false)}
+        onSubmit={handleFlightSubmit}
+        tripId={trip.id}
+      />
     </div>
   );
 } 

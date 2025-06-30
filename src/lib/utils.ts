@@ -117,27 +117,32 @@ export const calculateTripSummary = (
   const activitiesCost = tripActivities.reduce((sum, activity) => sum + activity.costPerPerson, 0) * trip.travelers;
   
   const flightsCost = tripFlights.reduce((sum, flight) => {
-    const cashCost = flight.pricePerPerson.cash * trip.travelers;
-    const pointsCost = flight.pricePerPerson.points ? 
-      (flight.pricePerPerson.points * pointsToCashRatio / 100) * trip.travelers : 0;
-    return sum + cashCost + pointsCost;
+    if (flight.paymentMethod === 'points') {
+      // Only add taxes (cash out of pocket) for points flights
+      return sum + (flight.pricePerPerson.taxes || 0) * trip.travelers;
+    } else if (flight.paymentMethod === 'hybrid') {
+      // Add both cash and points (cash for cash portion, points counted separately)
+      return sum + (flight.pricePerPerson.cash || 0) * trip.travelers + (flight.pricePerPerson.taxes || 0) * trip.travelers;
+    } else {
+      // Cash flights: add cash and taxes
+      return sum + (flight.pricePerPerson.cash || 0) * trip.travelers + (flight.pricePerPerson.taxes || 0) * trip.travelers;
+    }
   }, 0);
   
   const hotelsCost = tripHotels.reduce((sum, hotel) => {
     const cashCost = hotel.totalCost.cash;
-    const pointsCost = hotel.totalCost.points ? 
-      (hotel.totalCost.points * pointsToCashRatio / 100) : 0;
+    const pointsCost = 0; // Don't add points as cash equivalent
     return sum + cashCost + pointsCost;
   }, 0);
   
   const totalCashCost = activitiesCost + flightsCost + hotelsCost;
   
-  // Calculate points used
-  const totalPointsUsed = tripFlights.reduce((sum, flight) => 
-    sum + (flight.pricePerPerson.points || 0), 0
-  ) + tripHotels.reduce((sum, hotel) => 
-    sum + (hotel.totalCost.points || 0), 0
-  );
+  // Updated points used logic: multiply by travelers
+  const totalPointsUsed = tripFlights.reduce((sum, flight) =>
+    sum + ((flight.pricePerPerson.points || 0) * trip.travelers)
+  , 0) + tripHotels.reduce((sum, hotel) =>
+    sum + ((hotel.totalCost.points || 0))
+  , 0);
   
   // Calculate duration and PTO
   const duration = getDaysBetween(trip.startDate, trip.endDate);

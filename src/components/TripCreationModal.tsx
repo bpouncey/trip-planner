@@ -108,9 +108,9 @@ export function TripCreationModal({ isOpen, onClose, onSubmit, initialData, mode
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] flex flex-col">
+        {/* Sticky Header */}
+        <div className="sticky top-0 bg-white rounded-t-xl border-b border-gray-200 p-6 z-10">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">{mode === 'edit' ? 'Edit Trip' : 'Create New Trip'}</h2>
             <button
@@ -125,166 +125,168 @@ export function TripCreationModal({ isOpen, onClose, onSubmit, initialData, mode
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Trip Name */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-              Trip Name *
-            </label>
-            <input
-              type="text"
-              id="name"
-              value={formData.name}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, name: e.target.value }))
-                if (errors.name) setErrors(prev => ({ ...prev, name: undefined }))
-              }}
-              className={`input-field ${errors.name ? 'border-red-500 focus:ring-red-500' : ''}`}
-              placeholder="e.g., Summer Vacation 2024"
-              disabled={isSubmitting}
-            />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-            )}
-          </div>
-
-          {/* Destination */}
-          <div>
-            <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">
-              Destination *
-            </label>
-            <input
-              type="text"
-              id="destination"
-              value={formData.destination}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, destination: e.target.value }))
-                if (errors.destination) setErrors(prev => ({ ...prev, destination: undefined }))
-              }}
-              className={`input-field ${errors.destination ? 'border-red-500 focus:ring-red-500' : ''}`}
-              placeholder="e.g., Tokyo, Japan"
-              disabled={isSubmitting}
-            />
-            {errors.destination && (
-              <p className="mt-1 text-sm text-red-600">{errors.destination}</p>
-            )}
-          </div>
-
-          {/* Date Range */}
-          <div className="grid grid-cols-2 gap-4">
+        {/* Scrollable Form Content */}
+        <div className="flex-1 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Trip Name */}
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date *
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                Trip Name *
               </label>
               <input
-                type="date"
-                id="startDate"
-                value={formData.startDate}
+                type="text"
+                id="name"
+                value={formData.name}
                 onChange={(e) => {
-                  setFormData(prev => ({ ...prev, startDate: e.target.value }))
-                  if (errors.startDate) setErrors(prev => ({ ...prev, startDate: undefined }))
+                  setFormData(prev => ({ ...prev, name: e.target.value }))
+                  if (errors.name) setErrors(prev => ({ ...prev, name: undefined }))
                 }}
-                className={`input-field ${errors.startDate ? 'border-red-500 focus:ring-red-500' : ''}`}
+                className={`input-field ${errors.name ? 'border-red-500 focus:ring-red-500' : ''}`}
+                placeholder="e.g., Summer Vacation 2024"
                 disabled={isSubmitting}
               />
-              {errors.startDate && (
-                <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
               )}
             </div>
 
+            {/* Destination */}
             <div>
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
-                End Date *
+              <label htmlFor="destination" className="block text-sm font-medium text-gray-700 mb-2">
+                Destination *
               </label>
               <input
-                type="date"
-                id="endDate"
-                value={formData.endDate}
+                type="text"
+                id="destination"
+                value={formData.destination}
                 onChange={(e) => {
-                  setFormData(prev => ({ ...prev, endDate: e.target.value }))
-                  if (errors.endDate) setErrors(prev => ({ ...prev, endDate: undefined }))
+                  setFormData(prev => ({ ...prev, destination: e.target.value }))
+                  if (errors.destination) setErrors(prev => ({ ...prev, destination: undefined }))
                 }}
-                className={`input-field ${errors.endDate ? 'border-red-500 focus:ring-red-500' : ''}`}
+                className={`input-field ${errors.destination ? 'border-red-500 focus:ring-red-500' : ''}`}
+                placeholder="e.g., Tokyo, Japan"
                 disabled={isSubmitting}
               />
-              {errors.endDate && (
-                <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>
+              {errors.destination && (
+                <p className="mt-1 text-sm text-red-600">{errors.destination}</p>
               )}
             </div>
-          </div>
 
-          {/* Number of Travelers */}
-          <div>
-            <label htmlFor="travelers" className="block text-sm font-medium text-gray-700 mb-2">
-              Number of Travelers *
-            </label>
-            <input
-              type="number"
-              id="travelers"
-              min="1"
-              max="20"
-              value={formData.travelers}
-              onChange={e => {
-                const value = e.target.value;
-                setFormData(prev => ({ ...prev, travelers: value === '' ? 1 : Number(value) }));
-                if (errors.travelers) setErrors(prev => ({ ...prev, travelers: undefined }));
-              }}
-              className={`input-field ${errors.travelers ? 'border-red-500 focus:ring-red-500' : ''}`}
-              disabled={isSubmitting}
-            />
-            {errors.travelers && (
-              <p className="mt-1 text-sm text-red-600">{errors.travelers}</p>
-            )}
-          </div>
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date *
+                </label>
+                <input
+                  type="date"
+                  id="startDate"
+                  value={formData.startDate}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, startDate: e.target.value }))
+                    if (errors.startDate) setErrors(prev => ({ ...prev, startDate: undefined }))
+                  }}
+                  className={`input-field ${errors.startDate ? 'border-red-500 focus:ring-red-500' : ''}`}
+                  disabled={isSubmitting}
+                />
+                {errors.startDate && (
+                  <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>
+                )}
+              </div>
 
-          {/* Notes */}
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-              Notes (Optional)
-            </label>
-            <textarea
-              id="notes"
-              value={formData.notes || ''}
-              onChange={(e) => {
-                setFormData(prev => ({ ...prev, notes: e.target.value }))
-                if (errors.notes) setErrors(prev => ({ ...prev, notes: undefined }))
-              }}
-              className="input-field resize-none h-24"
-              placeholder="Any additional notes about this trip..."
-              disabled={isSubmitting}
-            />
-          </div>
+              <div>
+                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date *
+                </label>
+                <input
+                  type="date"
+                  id="endDate"
+                  value={formData.endDate}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, endDate: e.target.value }))
+                    if (errors.endDate) setErrors(prev => ({ ...prev, endDate: undefined }))
+                  }}
+                  className={`input-field ${errors.endDate ? 'border-red-500 focus:ring-red-500' : ''}`}
+                  disabled={isSubmitting}
+                />
+                {errors.endDate && (
+                  <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>
+                )}
+              </div>
+            </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex-1 btn-secondary"
-              disabled={isSubmitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 btn-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <div className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {mode === 'edit' ? 'Saving...' : 'Creating...'}
-                </div>
-              ) : (
-                mode === 'edit' ? 'Save Changes' : 'Create Trip'
+            {/* Number of Travelers */}
+            <div>
+              <label htmlFor="travelers" className="block text-sm font-medium text-gray-700 mb-2">
+                Number of Travelers *
+              </label>
+              <input
+                type="number"
+                id="travelers"
+                min="1"
+                max="20"
+                value={formData.travelers}
+                onChange={e => {
+                  const value = e.target.value;
+                  setFormData(prev => ({ ...prev, travelers: value === '' ? 1 : Number(value) }));
+                  if (errors.travelers) setErrors(prev => ({ ...prev, travelers: undefined }));
+                }}
+                className={`input-field ${errors.travelers ? 'border-red-500 focus:ring-red-500' : ''}`}
+                disabled={isSubmitting}
+              />
+              {errors.travelers && (
+                <p className="mt-1 text-sm text-red-600">{errors.travelers}</p>
               )}
-            </button>
-          </div>
-        </form>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                Notes (Optional)
+              </label>
+              <textarea
+                id="notes"
+                value={formData.notes || ''}
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, notes: e.target.value }))
+                  if (errors.notes) setErrors(prev => ({ ...prev, notes: undefined }))
+                }}
+                className="input-field resize-none h-24"
+                placeholder="Any additional notes about this trip..."
+                disabled={isSubmitting}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex-1 btn-secondary"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 btn-primary"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {mode === 'edit' ? 'Saving...' : 'Creating...'}
+                  </div>
+                ) : (
+                  mode === 'edit' ? 'Save Changes' : 'Create Trip'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

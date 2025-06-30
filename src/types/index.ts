@@ -54,6 +54,23 @@ export interface Activity {
   updatedAt: string;
 }
 
+export interface FlightSegment {
+  airline: string;
+  flightNumber: string;
+  departure: {
+    airport: string;
+    city: string;
+    dateTime: string;
+  };
+  arrival: {
+    airport: string;
+    city: string;
+    dateTime: string;
+  };
+  aircraftType?: string;
+  aircraftManufacturer?: string;
+}
+
 export interface Flight {
   id: string;
   tripId: string;
@@ -63,17 +80,18 @@ export interface Flight {
   departure: {
     airport: string;
     city: string;
-    dateTime: string; // ISO datetime string
+    dateTime: string;
   };
   arrival: {
     airport: string;
     city: string;
-    dateTime: string; // ISO datetime string
+    dateTime: string;
   };
   layovers?: Array<{
     location: string;
-    duration: number; // in minutes
+    duration: number;
   }>;
+  segments?: FlightSegment[];
   seatNumbers?: string[];
   planeType?: string;
   pricePerPerson: {
@@ -172,11 +190,16 @@ export interface CreateFlightForm {
   arrivalAirport: string;
   arrivalCity: string;
   arrivalDateTime: string;
-  pricePerPerson: number;
-  taxes: number;
+  pricePerPerson: {
+    cash: number;
+    points?: number;
+    taxes: number;
+  };
   paymentMethod: PaymentMethod;
+  points?: number;
   confirmationNumber?: string;
-  bookingLink?: string;
+  airlineLogo?: string;
+  segments?: FlightSegment[];
 }
 
 export interface CreateHotelForm {

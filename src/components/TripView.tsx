@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import type { Trip, CreateTripForm, CreateActivityForm, Activity } from '../types';
+import type { Trip, CreateTripForm, CreateActivityForm, Activity, Flight, CreateFlightForm, Hotel, CreateHotelForm } from '../types';
 import { TripTimeline } from './TripTimeline';
 import { TripSummary } from './TripSummary';
 import { TripActions } from './TripActions';
 import { TripCreationModal } from './TripCreationModal';
 import { ActivityModal } from './ActivityModal';
-import { getActivities, createActivity, updateActivity, deleteActivity } from '../lib/tripService';
+import { getActivities, createActivity, updateActivity, deleteActivity, getFlights, createFlight, deleteFlight, getHotels, createHotel, updateHotel, deleteHotel as deleteHotelFn } from '../lib/tripService';
+import FlightModal from './FlightModal';
+import HotelModal from './HotelModal';
 
 interface TripViewProps {
   trip: Trip;
@@ -21,6 +23,16 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Flights state and CRUD logic
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [flightsLoading, setFlightsLoading] = useState(true);
+  const [flightsError, setFlightsError] = useState<string | null>(null);
+
+  // Hotels state and CRUD logic
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [hotelsLoading, setHotelsLoading] = useState(true);
+  const [hotelsError, setHotelsError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadActivities = async () => {
@@ -38,6 +50,42 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
       }
     };
     loadActivities();
+  }, [trip.id]);
+
+  useEffect(() => {
+    const loadFlights = async () => {
+      try {
+        setFlightsLoading(true);
+        const tripFlights = await getFlights(trip.id);
+        setFlights(tripFlights);
+        setFlightsError(null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load flights';
+        setFlightsError(errorMessage);
+        setFlights([]);
+      } finally {
+        setFlightsLoading(false);
+      }
+    };
+    loadFlights();
+  }, [trip.id]);
+
+  useEffect(() => {
+    const loadHotels = async () => {
+      try {
+        setHotelsLoading(true);
+        const tripHotels = await getHotels(trip.id);
+        setHotels(tripHotels);
+        setHotelsError(null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load hotels';
+        setHotelsError(errorMessage);
+        setHotels([]);
+      } finally {
+        setHotelsLoading(false);
+      }
+    };
+    loadHotels();
   }, [trip.id]);
 
   const handleCreateActivity = async (activityData: CreateActivityForm) => {
@@ -64,6 +112,25 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
     try {
       await deleteActivity(trip.id, activityId);
       setActivities(prev => prev.filter(activity => activity.id !== activityId));
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleCreateFlight = async (flightData: CreateFlightForm) => {
+    try {
+      const newFlight = await createFlight(trip.id, flightData);
+      setFlights(prev => [...prev, newFlight]);
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleDeleteFlight = async (flightId: string) => {
+    if (!window.confirm('Are you sure you want to delete this flight?')) return;
+    try {
+      await deleteFlight(trip.id, flightId);
+      setFlights(prev => prev.filter(flight => flight.id !== flightId));
     } catch (err) {
       throw err;
     }
@@ -101,9 +168,79 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
   };
 
   // Handler for ActivityModal submit
-  const handleActivityModalSubmit = async (activityData: CreateActivityForm) => {
-    await handleCreateActivity(activityData);
-    handleCloseActivityModal();
+  const handleActivityModalSubmit = (activityData: CreateActivityForm) => {
+    handleCreateActivity(activityData).then(handleCloseActivityModal);
+  };
+
+  // Flight modal state
+  const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
+  const [flightInitialDate, setFlightInitialDate] = useState<string | undefined>(undefined);
+
+  // Handler to open the flight modal (optionally with a date)
+  const handleAddFlight = (date?: string) => {
+    setFlightInitialDate(date);
+    setIsFlightModalOpen(true);
+  };
+
+  // Handler to close the flight modal
+  const handleCloseFlightModal = () => {
+    setIsFlightModalOpen(false);
+    setFlightInitialDate(undefined);
+  };
+
+  // Handler for FlightModal submit
+  const handleFlightModalSubmit = (flightData: CreateFlightForm) => {
+    handleCreateFlight(flightData).then(handleCloseFlightModal);
+  };
+
+  // Hotel modal state
+  const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
+  const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
+
+  // Handler to open the hotel modal (add or edit)
+  const handleAddHotel = () => {
+    setEditingHotel(null);
+    setIsHotelModalOpen(true);
+  };
+  const handleEditHotel = (hotel: Hotel) => {
+    setEditingHotel(hotel);
+    setIsHotelModalOpen(true);
+  };
+
+  // Handler to close the hotel modal
+  const handleCloseHotelModal = () => {
+    setIsHotelModalOpen(false);
+    setEditingHotel(null);
+  };
+
+  // Handler for HotelModal submit (add or edit)
+  const handleHotelModalSubmit = async (hotelData: CreateHotelForm) => {
+    try {
+      if (editingHotel) {
+        await updateHotel(trip.id, editingHotel.id, {
+          ...hotelData,
+          totalCost: typeof hotelData.totalCost === 'number' ? { cash: hotelData.totalCost, points: 0 } : hotelData.totalCost,
+        });
+        setHotels(prev => prev.map(h => h.id === editingHotel.id ? { ...h, ...hotelData, totalCost: typeof hotelData.totalCost === 'number' ? { cash: hotelData.totalCost, points: 0 } : hotelData.totalCost } : h));
+      } else {
+        const newHotel = await createHotel(trip.id, hotelData);
+        setHotels(prev => [...prev, newHotel]);
+      }
+      setIsHotelModalOpen(false);
+      setEditingHotel(null);
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleDeleteHotel = async (hotelId: string) => {
+    if (!window.confirm('Are you sure you want to delete this hotel?')) return;
+    try {
+      await deleteHotelFn(trip.id, hotelId);
+      setHotels(prev => prev.filter(h => h.id !== hotelId));
+    } catch (err) {
+      throw err;
+    }
   };
 
   return (
@@ -142,14 +279,30 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
             <TripTimeline
               trip={trip}
               activities={activities}
+              flights={flights}
+              hotels={hotels}
               loading={loading}
               error={error}
               onAddActivity={handleAddActivity}
+              onAddFlight={handleAddFlight}
+              onAddHotel={handleAddHotel}
+              onEditHotel={handleEditHotel}
+              onDeleteHotel={handleDeleteHotel}
               onUpdateActivity={handleUpdateActivity}
               onDeleteActivity={handleDeleteActivity}
+              onDeleteFlight={handleDeleteFlight}
             />
           )}
-          {viewMode === 'summary' && <TripSummary trip={trip} />}
+          {viewMode === 'summary' && (
+            <TripSummary 
+              trip={trip} 
+              activities={activities}
+              flights={flights}
+              hotels={hotels}
+              onAddFlight={async (flightData) => await handleCreateFlight(flightData)}
+              onAddHotel={handleAddHotel}
+            />
+          )}
           {viewMode === 'actions' && (
             <>
               <TripActions
@@ -157,6 +310,8 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
                 onDeleteTrip={onDeleteTrip}
                 onEditTrip={() => setIsEditModalOpen(true)}
                 onAddActivity={handleAddActivity}
+                onAddFlight={async (flightData) => await handleCreateFlight(flightData)}
+                onAddHotel={handleAddHotel}
               />
               <TripCreationModal
                 isOpen={isEditModalOpen}
@@ -188,6 +343,20 @@ export function TripView({ trip, onDeleteTrip, onUpdateTrip }: TripViewProps) {
         mode={activityMode}
         tripStartDate={trip.startDate}
         tripEndDate={trip.endDate}
+      />
+      <FlightModal
+        isOpen={isFlightModalOpen}
+        onClose={handleCloseFlightModal}
+        onSubmit={handleFlightModalSubmit}
+        tripId={trip.id}
+        flight={flightInitialDate ? { departure: { dateTime: flightInitialDate } } as any : undefined}
+      />
+      <HotelModal
+        isOpen={isHotelModalOpen}
+        onClose={handleCloseHotelModal}
+        onSubmit={handleHotelModalSubmit}
+        tripId={trip.id}
+        hotel={editingHotel || undefined}
       />
     </div>
   );

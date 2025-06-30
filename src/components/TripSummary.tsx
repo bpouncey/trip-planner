@@ -1,37 +1,47 @@
-import type { Trip } from '../types';
+import type { Trip, Activity, Flight, Hotel } from '../types';
 import { calculateTripSummary, formatCurrency, formatPoints, calculatePTODays } from '../lib/utils';
+import FlightModal from './FlightModal';
+import { useState } from 'react';
+import { createFlight } from '../lib/tripService';
+import type { CreateFlightForm } from '../types';
 
 interface TripSummaryProps {
   trip: Trip;
+  activities: Activity[];
+  flights: Flight[];
+  hotels: Hotel[];
+  onAddFlight?: (flightData: CreateFlightForm) => Promise<void>;
+  onAddHotel?: () => void;
 }
 
-// Mock data - will be replaced with Firebase data
-const mockActivities = [
-  { tripId: '1', costPerPerson: 80 },
-  { tripId: '1', costPerPerson: 120 },
-  { tripId: '1', costPerPerson: 0 },
-];
+export function TripSummary({ trip, activities, flights, hotels, onAddFlight, onAddHotel }: TripSummaryProps) {
+  const [isFlightModalOpen, setIsFlightModalOpen] = useState(false);
+  const [isAddingFlight, setIsAddingFlight] = useState(false);
 
-const mockFlights = [
-  {
-    tripId: '1',
-    pricePerPerson: { cash: 1200, points: 50000, taxes: 50 },
-    paymentMethod: 'hybrid' as const,
-  },
-];
-
-const mockHotels = [
-  {
-    tripId: '1',
-    totalCost: { cash: 2000, points: 25000 },
-    paymentMethod: 'hybrid' as const,
-  },
-];
-
-export function TripSummary({ trip }: TripSummaryProps) {
-  // Calculate summary using mock data
-  const summary = calculateTripSummary(trip, mockActivities as any, mockFlights as any, mockHotels as any);
+  // Calculate summary using real data
+  const summary = calculateTripSummary(trip, activities, flights, hotels);
   const ptoDays = calculatePTODays(trip.startDate, trip.endDate);
+
+  const handleAddFlight = () => {
+    setIsFlightModalOpen(true);
+  };
+
+  const handleFlightSubmit = async (flightData: CreateFlightForm) => {
+    setIsAddingFlight(true);
+    try {
+      await createFlight(trip.id, flightData);
+      setIsFlightModalOpen(false);
+      // Notify parent component if callback provided
+      if (onAddFlight) {
+        await onAddFlight(flightData);
+      }
+    } catch (error) {
+      console.error('Error adding flight:', error);
+      // You could add a toast notification here
+    } finally {
+      setIsAddingFlight(false);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -61,7 +71,7 @@ export function TripSummary({ trip }: TripSummaryProps) {
                   </span>
                 </div>
                 <div className="text-sm text-blue-700 mt-1">
-                  {trip.travelers} traveler{trip.travelers > 1 ? 's' : ''} • {formatPoints(summary.totalPointsUsed)} points used
+                  {trip.travelers} traveler{trip.travelers > 1 ? 's' : ''} • {formatPoints(summary.totalPointsUsed)} points used (all travelers)
                 </div>
               </div>
 
@@ -98,14 +108,20 @@ export function TripSummary({ trip }: TripSummaryProps) {
                 </div>
               </div>
 
-              {/* Cost per Person */}
-              <div className="pt-3 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Cost per Person</span>
-                  <span className="text-lg font-semibold text-gray-900">
-                    {formatCurrency(summary.totalCashCost / trip.travelers)}
-                  </span>
-                </div>
+              {/* Cost per Person and Points per Person */}
+              <div className="pt-3 border-t border-gray-200 space-y-1">
+                {summary.totalCashCost / trip.travelers > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Cost per Person</span>
+                    <span className="text-lg font-semibold text-gray-900">{formatCurrency(summary.totalCashCost / trip.travelers)}</span>
+                  </div>
+                )}
+                {summary.totalPointsUsed / trip.travelers > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">Points per Person</span>
+                    <span className="text-lg font-semibold text-green-700">{formatPoints(summary.totalPointsUsed / trip.travelers)} pts</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -190,32 +206,48 @@ export function TripSummary({ trip }: TripSummaryProps) {
           {/* Quick Actions */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            
             <div className="space-y-3">
-              <button className="w-full btn-primary">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add Activity
+              <button className="w-full btn-primary flex items-center justify-center gap-2">
+                <span className="text-xl">+</span>
+                <span>Add Activity</span>
               </button>
-              
-              <button className="w-full btn-secondary">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+              <button 
+                className="w-full btn-secondary flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors" 
+                onClick={handleAddFlight}
+                disabled={isAddingFlight}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Share Trip
+                <span>{isAddingFlight ? 'Adding...' : 'Add Flight'}</span>
               </button>
-              
-              <button className="w-full btn-secondary">
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <button 
+                className="w-full btn-secondary flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors" 
+                onClick={onAddHotel}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                Export PDF
+                <span>Add Hotel</span>
+              </button>
+              <button className="w-full btn-secondary flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span>Add Task</span>
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Flight Modal */}
+      <FlightModal
+        isOpen={isFlightModalOpen}
+        onClose={() => setIsFlightModalOpen(false)}
+        onSubmit={handleFlightSubmit}
+        tripId={trip.id}
+      />
     </div>
   );
 } 
